@@ -46,12 +46,18 @@ defmodule Gamer.MixProject do
   end
 
   # Specify target specific dependencies
-  defp deps("host"), do: []
+  defp deps("host") do
+    [
+      {:scenic_driver_glfw, "~> 0.9.0"}
+    ]
+  end
 
   defp deps(target) do
     [
       {:nerves_init_gadget, "~> 0.5.2"},
-      {:nerves_runtime, "~> 0.6"}
+      {:nerves_runtime, "~> 0.6"},
+      {:scenic_driver_nerves_touch, "~> 0.9.1"},
+      {:scenic_driver_nerves_rpi, "~> 0.9.2"}
     ] ++ system(target)
   end
 
