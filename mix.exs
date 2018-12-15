@@ -50,6 +50,7 @@ defmodule Gamer.MixProject do
 
   defp deps(target) do
     [
+      {:nerves_init_gadget, "~> 0.5.2"},
       {:nerves_runtime, "~> 0.6"}
     ] ++ system(target)
   end
