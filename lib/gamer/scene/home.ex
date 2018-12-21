@@ -6,6 +6,8 @@ defmodule Gamer.Scene.Home do
   import Scenic.Primitives
   # import Scenic.Components
 
+  require Logger
+
   @note """
     This is a very simple starter application.
 
@@ -20,8 +22,25 @@ defmodule Gamer.Scene.Home do
   # ============================================================================
   # setup
   # --------------------------------------------------------
-  def init(_, _) do
+  def init(first_scene, opts) do
+    IO.inspect(first_scene)
+    IO.inspect(opts)
     push_graph( @graph )
     {:ok, @graph}
+  end
+
+  def handle_info(msg) do
+    Logger.info("#{inspect(msg)}", label: "handle_info")
+  end
+
+  def handle_input(event, _context, state) do
+    Logger.info("#{inspect(event)}", label: "handle_input")
+    {:noreply, state}
+  end
+
+ def status_message(msg) do
+    @graph
+    |> text(msg, translate: {20, 204})
+    |> push_graph()
   end
 end

@@ -8,7 +8,7 @@ config :gamer, :viewport, %{
     %{
       module: Scenic.Driver.Glfw,
       name: :glfw,
-      opts: [resizeable: false, title: "snake"]
+      opts: [resizeable: false, title: "Gamer"]
     }
   ]
 }
