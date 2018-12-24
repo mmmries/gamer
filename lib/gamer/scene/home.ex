@@ -63,13 +63,17 @@ defmodule Gamer.Scene.Home do
 
   def pick_next({x, y}, :right), do: {rem(x + 1 + @width, @width), y}
   def pick_next({x, y}, :left),  do: {rem(x - 1 + @width, @width), y}
-  def pick_next({x, y}, :up),    do: {x, rem(y + 1 + @height, @height)}
-  def pick_next({x, y}, :down), do:  {x, rem(y - 1 + @height, @height)}
+  def pick_next({x, y}, :up),    do: {x, rem(y - 1 + @height, @height)}
+  def pick_next({x, y}, :down), do:  {x, rem(y + 1 + @height, @height)}
 
   def schedule_tick, do: Process.send_after(self(), :tick, @frame_interval)
 
-  def try_move(state, _direction) do
-    {:noreply, state}
+  def try_move(%__MODULE__{direction: :up}=state,    :down),  do: {:noreply, state}
+  def try_move(%__MODULE__{direction: :down}=state,  :up),    do: {:noreply, state}
+  def try_move(%__MODULE__{direction: :left}=state,  :right), do: {:noreply, state}
+  def try_move(%__MODULE__{direction: :right}=state, :left),  do: {:noreply, state}
+  def try_move(%__MODULE__{}=state, direction) do
+    {:noreply, %{state | direction: direction}}
   end
 
   def update_state(state) do
