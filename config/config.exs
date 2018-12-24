@@ -13,12 +13,6 @@ config :shoehorn,
   init: [:nerves_runtime],
   app: Mix.Project.config()[:app]
 
-# Use Ringlogger as the logger backend and remove :console.
-# See https://hexdocs.pm/ring_logger/readme.html for more information on
-# configuring ring_logger.
-
-config :logger, backends: [RingLogger]
-
 config :nerves_firmware_ssh,
   authorized_keys: [
     File.read!(Path.join(System.user_home!(), ".ssh/id_rsa.pub"))
