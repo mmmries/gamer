@@ -1,8 +1,7 @@
 defmodule Gamer.Scene.Home do
   use Scenic.Scene
   alias Scenic.Graph
-  alias Scenic.ViewPort.Context
-  import Scenic.Primitives, only: [rrect: 3]
+  import Scenic.Primitives, only: [rect: 3, rrect: 3]
   require Logger
 
   @frame_interval 200
@@ -38,10 +37,10 @@ defmodule Gamer.Scene.Home do
   def handle_input({:key, {"down",  :press, _}}, _context, state), do: try_move(state, :down)
   def handle_input({:key, {"left",  :press, _}}, _context, state), do: try_move(state, :left)
   def handle_input({:key, {"right", :press, _}}, _context, state), do: try_move(state, :right)
-  def handle_input({:cursor_button, {:left, :press, _, _}}, %Context{id: :up},    state), do: try_move(state, :up)
-  def handle_input({:cursor_button, {:left, :press, _, _}}, %Context{id: :down},  state), do: try_move(state, :down)
-  def handle_input({:cursor_button, {:left, :press, _, _}}, %Context{id: :left},  state), do: try_move(state, :left)
-  def handle_input({:cursor_button, {:left, :press, _, _}}, %Context{id: :right}, state), do: try_move(state, :right)
+  def handle_input({:cursor_button, {:left, :press, _, coords}}, _context, %__MODULE__{snake: [head | _]}=state) do
+    direction = relative_click_direction(head, coords)
+    try_move(state, direction)
+  end
   def handle_input(event, _context, state) do
     Logger.info("#{inspect(event)}", label: "handle_input")
     {:noreply, state}
@@ -67,17 +66,9 @@ defmodule Gamer.Scene.Home do
 
   def paint(state) do
     Graph.build(font: :roboto, font_size: 24)
-    |> paint_buttons()
+    |> rect({800, 480}, [])
     |> paint_snake(state.snake)
     |> push_graph()
-  end
-
-  def paint_buttons(graph) do
-    graph
-    |> rrect({200, 200, 195}, [id: :up,    fill: {:cyan, 64},   translate: {300, 0}])
-    |> rrect({200, 200, 195}, [id: :down,  fill: {:cyan, 64},   translate: {300, 280}])
-    |> rrect({200, 200, 195}, [id: :left,  fill: {:cyan, 64},    translate: {0, 140}])
-    |> rrect({200, 200, 195}, [id: :right, fill: {:cyan, 64}, translate: {600, 140}])
   end
 
   def paint_snake(graph, []), do: graph
@@ -106,5 +97,18 @@ defmodule Gamer.Scene.Home do
   def update_state(state) do
     state
     |> move_snake()
+  end
+
+  defp relative_click_direction({tile_x, tile_y}, {x, y}) do
+    head_x = tile_x * @tile_size + div(@tile_size, 2)
+    head_y = tile_y * @tile_size + div(@tile_size, 2)
+    vec_x = x - head_x
+    vec_y = y - head_y
+    cond do
+      abs(vec_y) > abs(vec_x) && vec_y < 0 -> :up
+      abs(vec_y) > abs(vec_x) && vec_y >= 0 -> :down
+      vec_x < 0 -> :left
+      true -> :right
+    end
   end
 end
