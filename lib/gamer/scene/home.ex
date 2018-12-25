@@ -1,7 +1,7 @@
 defmodule Gamer.Scene.Home do
   use Scenic.Scene
   alias Scenic.Graph
-  import Scenic.Primitives, only: [rect: 3, rrect: 3]
+  import Scenic.Primitives, only: [rect: 3, rrect: 3, text: 3]
   require Logger
 
   @frame_interval 200
@@ -25,11 +25,18 @@ defmodule Gamer.Scene.Home do
 
   def handle_info(:tick, state) do
     state = state |> update_state()
-
     paint(state)
-    schedule_tick()
+
+    case state.dead do
+      true ->  schedule_restart()
+      false -> schedule_tick()
+    end
 
     {:noreply, state}
+  end
+  def handle_info(:restart, _state) do
+    schedule_tick()
+    {:noreply, %__MODULE__{}}
   end
   def handle_info(msg, _state) do
     Logger.info("#{inspect(msg)}", label: "handle_info")
@@ -78,6 +85,7 @@ defmodule Gamer.Scene.Home do
     |> rect({@width * @tile_size, @height * @tile_size}, []) # a clear background rect so we can receive positional input like clicks
     |> paint_snake(state.snake)
     |> paint_food(state.food)
+    |> paint_game_over(state.dead, state.score)
     |> push_graph()
   end
 
@@ -87,6 +95,13 @@ defmodule Gamer.Scene.Home do
 
     graph
     |> rrect({@tile_size, @tile_size, @tile_radius}, tile_opts)
+  end
+
+  def paint_game_over(graph, false, _score), do: graph
+  def paint_game_over(graph, true, score) do
+    graph
+    |> text( "U Ded", translate: {400, 200}, text_align: :center )
+    |> text( "Score: #{score}", translate: {400, 300}, text_align: :center )
   end
 
   def paint_snake(graph, []), do: graph
@@ -102,6 +117,8 @@ defmodule Gamer.Scene.Home do
   def pick_next({x, y}, :left),  do: {rem(x - 1 + @width, @width), y}
   def pick_next({x, y}, :up),    do: {x, rem(y - 1 + @height, @height)}
   def pick_next({x, y}, :down), do:  {x, rem(y + 1 + @height, @height)}
+
+  def schedule_restart, do: Process.send_after(self(), :restart, 7_000)
 
   def schedule_tick, do: Process.send_after(self(), :tick, @frame_interval)
 
