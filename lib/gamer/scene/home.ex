@@ -11,9 +11,11 @@ defmodule Gamer.Scene.Home do
   @tile_size 20  #pixels per side
   @tile_radius 8 #pixels
 
-  defstruct snake:     [{21,12} | List.duplicate({20, 12}, 7)],
+  defstruct snake:     List.duplicate({20, 12}, 4),
             direction: :right,
-            scope:     0,
+            food:      nil,
+            length:    4,
+            score:     0,
             dead:      false
 
   def init(_first_scene, _opts) do
@@ -46,18 +48,25 @@ defmodule Gamer.Scene.Home do
     {:noreply, state}
   end
 
-  def check_for_collision(%__MODULE__{snake: [head | tail]}=state) do
-    if Enum.member?(tail, head) do
-      %{state | dead: true}
-    else
-      state
-    end
+  def eat_or_generate_food(%__MODULE__{food: nil, snake: snake}=state) do
+    all_tiles = for x <- 0..(@width - 1),
+                    y <- 0..(@height - 1),
+                    do: {x, y}
+    tile = all_tiles
+          |> Enum.reject(fn(tile) -> Enum.member?(snake, tile) end)
+          |> Enum.shuffle()
+          |> hd
+    %{ state | food: tile }
   end
+  def eat_or_generate_food(%__MODULE__{food: tile, snake: [tile | _rest]}=state) do
+    %{ state | score: state.score + 1,length: state.length + 1, food: nil }
+  end
+  def eat_or_generate_food(state), do: state
 
   def move_snake(%__MODULE__{dead: true}=state), do: state
-  def move_snake(%__MODULE__{snake: [head | tail], direction: direction}=state) do
+  def move_snake(%__MODULE__{snake: [head | tail], direction: direction, length: length}=state) do
     next = pick_next(head, direction)
-    new_tail = [head | Enum.slice(tail, 0..-2)]
+    new_tail = [head | Enum.take(tail, length - 2)]
     case Enum.member?(new_tail, next) do
       false -> %{state | snake: [next | new_tail]}
       true ->  %{state | dead: true}
@@ -66,14 +75,24 @@ defmodule Gamer.Scene.Home do
 
   def paint(state) do
     Graph.build(font: :roboto, font_size: 24)
-    |> rect({800, 480}, [])
+    |> rect({@width * @tile_size, @height * @tile_size}, []) # a clear background rect so we can receive positional input like clicks
     |> paint_snake(state.snake)
+    |> paint_food(state.food)
     |> push_graph()
+  end
+
+  def paint_food(graph, nil), do: graph
+  def paint_food(graph, {x, y}) do
+    tile_opts = [fill: :yellow, translate: {x * @tile_size, y * @tile_size}]
+
+    graph
+    |> rrect({@tile_size, @tile_size, @tile_radius}, tile_opts)
   end
 
   def paint_snake(graph, []), do: graph
   def paint_snake(graph, [{x, y} | tail]) do
     tile_opts = [fill: :lime, translate: {x * @tile_size, y * @tile_size}]
+
     graph
     |> rrect({@tile_size, @tile_size, @tile_radius}, tile_opts)
     |> paint_snake(tail)
@@ -97,6 +116,7 @@ defmodule Gamer.Scene.Home do
   def update_state(state) do
     state
     |> move_snake()
+    |> eat_or_generate_food()
   end
 
   defp relative_click_direction({tile_x, tile_y}, {x, y}) do
